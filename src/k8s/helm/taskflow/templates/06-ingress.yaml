@@ -51,3 +51,10 @@ spec:
                 name: frontend-service
                 port:
                   number: 80
+          - paths: /argocd
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 30559
