@@ -1,0 +1,16 @@
+# ── PostgreSQL PersistentVolumeClaim ─────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: app
+  labels:
+    app: taskflow
+    tier: database
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: gp2   # EKS default StorageClass — change to gp3 if you have it
+  resources:
+    requests:
+      storage: 5Gi

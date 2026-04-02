@@ -1,0 +1,53 @@
+# ── AWS ALB Ingress ───────────────────────────────────────────────
+# Requires: AWS Load Balancer Controller installed on your EKS cluster
+# (You likely already have this from your existing ALB setup)
+#
+# Replace:
+#   YOUR_DOMAIN     -> e.g. taskflow.example.com
+#   YOUR_ACM_ARN    -> your ACM certificate ARN
+# ─────────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: taskflow-ingress
+  namespace: app
+  labels:
+    app: taskflow
+  annotations:
+    # ALB Controller
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+
+    # SSL — replace with your actual ACM certificate ARN
+    #alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:ap-south-1:YOUR_ACCOUNT_ID:certificate/YOUR_CERT_ID"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+    #alb.ingress.kubernetes.io/ssl-redirect: "443"
+
+    # Health check
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "30"
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
+
+    # Performance
+    #alb.ingress.kubernetes.io/load-balancer-attributes: >-
+    #  idle_timeout.timeout_seconds=60,
+    #  routing.http2.enabled=true,
+    #  access_logs.s3.enabled=false
+
+    # Tags (optional but useful for cost tracking)
+    alb.ingress.kubernetes.io/tags: "Project=taskflow,Environment=dev,ManagedBy=terraform"
+
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80

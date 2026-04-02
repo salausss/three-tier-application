@@ -1,0 +1,18 @@
+# ── PostgreSQL Service (ClusterIP — internal only) ────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: app
+  labels:
+    app: taskflow
+    tier: database
+spec:
+  selector:
+    app: taskflow
+    tier: database
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+  type: ClusterIP

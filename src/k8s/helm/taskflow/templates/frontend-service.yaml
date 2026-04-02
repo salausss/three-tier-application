@@ -1,0 +1,19 @@
+# ── Frontend Service ──────────────────────────────────────────────
+# NodePort here — ALB Ingress will route to this service
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: app
+  labels:
+    app: taskflow
+    tier: frontend
+spec:
+  selector:
+    app: taskflow
+    tier: frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+  type: NodePort    # Required for AWS ALB Ingress Controller
