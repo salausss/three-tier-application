@@ -57,4 +57,4 @@ spec:
               service:
                 name: argocd-server
                 port:
-                  number: 30559
+                  number: 80
