@@ -38,7 +38,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: frontend
-          image: frontend/application-frontend:latest   # Replace with your ECR URI
+          image: 929861724743.dkr.ecr.ap-south-1.amazonaws.com/frontend:latest   # Replace with your ECR URI
           imagePullPolicy: Always
           ports:
             - containerPort: 80
