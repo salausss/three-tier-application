@@ -94,4 +94,4 @@ spec:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
-              secretProviderClass: taskflow-db-secrets
+              secretProviderClass: pip-taskflow-db-secrets

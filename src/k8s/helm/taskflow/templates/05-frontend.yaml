@@ -25,7 +25,7 @@ spec:
       driver: secrets-store.csi.k8s.io
       readOnly: true
       volumeAttributes:
-        secretProviderClass: taskflow-app-secrets
+        secretProviderClass: pip-taskflow-app-secrets
   template:
     metadata:
       labels:
