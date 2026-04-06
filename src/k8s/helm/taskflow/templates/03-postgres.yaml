@@ -60,31 +60,21 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
           env:
-            - name: DB_USERNAME
+            - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
                   name: taskflow-db-credentials
-                  key: DB_USERNAME
-            - name: DB_PASSWORD
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: taskflow-db-credentials
-                  key: DB_PASSWORD
-            - name: DB_HOST
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
                   name: taskflow-db-credentials
-                  key: DB_HOST
-            - name: DB_PORT
-              valueFrom:
-                secretKeyRef:
-                  name: taskflow-db-credentials
-                  key: DB_PORT
-            - name: DB_NAME
-              valueFrom:
-                secretKeyRef:
-                  name: taskflow-db-credentials
-                  key: DB_NAME
+                  key: POSTGRES_DB
       volumes:
         - name: postgres-data
           persistentVolumeClaim:
