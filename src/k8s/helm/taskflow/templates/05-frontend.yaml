@@ -43,7 +43,7 @@ spec:
           driver: secrets-store.csi.k8s.io
           readOnly: true
           volumeAttributes:
-            secretProviderClass: pip-taskflow-app-secret
+            secretProviderClass: taskflow-app-secrets
       containers:
         - name: frontend
           image: 929861724743.dkr.ecr.ap-south-1.amazonaws.com/frontend:latest   # Replace with your ECR URI
