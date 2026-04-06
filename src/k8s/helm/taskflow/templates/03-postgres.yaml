@@ -3,11 +3,12 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
-  namespace: app
+  namespace: db
   labels:
     app: taskflow
     tier: database
 spec:
+  serviceAccountName: taskflow-db-sa
   replicas: 1          # Postgres with PVC = single replica (use RDS for HA in prod)
   selector:
     matchLabels:
@@ -42,6 +43,9 @@ spec:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
               subPath: postgres     # subPath avoids "lost+found" issue
+            - name: db-secrets-vol
+              mountPath: /mnt/secrets
+              readOnly: true
           livenessProbe:
             exec:
               command: ["pg_isready", "-U", "taskflow", "-d", "taskflow"]
@@ -55,7 +59,39 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 3
+          env:
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: taskflow-db-credentials
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: taskflow-db-credentials
+                  key: DB_PASSWORD
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: taskflow-db-credentials
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: taskflow-db-credentials
+                  key: DB_PORT
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: taskflow-db-credentials
+                  key: DB_NAME
       volumes:
         - name: postgres-data
           persistentVolumeClaim:
             claimName: postgres-pvc
+        - name: db-secrets-vol
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: taskflow-db-secrets
