@@ -24,7 +24,7 @@ spec:
         app: taskflow
         tier: backend
     spec:
-      # Anti-affinity: spread replicas across nodes
+      serviceAccountName: taskflow-app-sa
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -37,6 +37,13 @@ spec:
                       values: ["backend"]
                 topologyKey: kubernetes.io/hostname
       terminationGracePeriodSeconds: 30
+      volumes:
+      - name: app-secrets-vol
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: taskflow-app-secrets
       containers:
         - name: backend
           image: 929861724743.dkr.ecr.ap-south-1.amazonaws.com/backend:latest   # Replace with your ECR URI
@@ -82,4 +89,8 @@ spec:
             preStop:
               exec:
                 command: ["/bin/sh", "-c", "sleep 5"]  # drain connections before SIGTERM
+          volumeMounts:
+            - name: app-secrets-vol
+              mountPath: /mnt/secrets
+              readOnly: true
 
