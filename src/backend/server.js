@@ -154,53 +154,46 @@ res.status(500).json({ error: 'Failed to create task' });
 }
 });
 
-// PATCH update task
+// PATCH update task status (or priority)
 app.patch('/api/tasks/:id', async (req, res) => {
-const id = parseInt(req.params.id);
-if (isNaN(id)) return res.status(400).json({ error: 'Invalid task id' });
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: 'Invalid task id' });
 
-const { status, priority } = req.body;
-const validStatuses = ['todo', 'progress', 'done'];
-const validPriorities = ['low', 'medium', 'high'];
+  const { status, priority } = req.body;
+  const validStatuses = ['todo', 'progress', 'done'];
+  const validPriorities = ['low', 'medium', 'high'];
 
-if (status && !validStatuses.includes(status)) {
-return res.status(400).json({ error: 'Invalid status' });
-}
+  if (status && !validStatuses.includes(status)) {
+    return res.status(400).json({ error: 'status must be todo | progress | done' });
+  }
+  if (priority && !validPriorities.includes(priority)) {
+    return res.status(400).json({ error: 'priority must be low | medium | high' });
+  }
 
-if (priority && !validPriorities.includes(priority)) {
-return res.status(400).json({ error: 'Invalid priority' });
-}
+  try {
+    const updates = [];
+    const values = [];
+    let idx = 1;
 
-try {
-const updates = [];
-const values = [];
-let idx = 1;
+    if (status)   { updates.push(`status = $${idx++}`);   values.push(status); }
+    if (priority) { updates.push(`priority = $${idx++}`); values.push(priority); }
+    if (!updates.length) return res.status(400).json({ error: 'Nothing to update' });
 
-```
-if (status)   { updates.push(`status = $${idx++}`); values.push(status); }
-if (priority) { updates.push(`priority = $${idx++}`); values.push(priority); }
+    updates.push(`updated_at = NOW()`);
+    values.push(id);
 
-if (!updates.length) {
-  return res.status(400).json({ error: 'Nothing to update' });
-}
-
-updates.push(`updated_at = NOW()`);
-values.push(id);
-
-const { rows } = await pool.query(
-  `UPDATE tasks SET ${updates.join(', ')} WHERE id = $${idx} RETURNING *`,
-  values
-);
-
-if (!rows.length) return res.status(404).json({ error: 'Task not found' });
-res.json(rows[0]);
-```
-
-} catch (err) {
-console.error('PATCH /tasks error:', err.message);
-res.status(500).json({ error: 'Failed to update task' });
-}
+    const { rows } = await pool.query(
+      `UPDATE tasks SET ${updates.join(', ')} WHERE id = $${idx} RETURNING *`,
+      values
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Task not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('PATCH /tasks error:', err.message);
+    res.status(500).json({ error: 'Failed to update task' });
+  }
 });
+
 
 // DELETE task
 app.delete('/api/tasks/:id', async (req, res) => {
