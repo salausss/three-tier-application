@@ -56,28 +56,26 @@ await client.query(`       CREATE TABLE IF NOT EXISTS tasks (
       );
     `);
 
-```
-const { rows } = await client.query('SELECT COUNT(*) FROM tasks');
-if (parseInt(rows[0].count) === 0) {
-  await client.query(`
-    INSERT INTO tasks (title, status, priority) VALUES
-      ('Set up EKS cluster with Terraform',   'done',     'high'),
-      ('Configure ALB Ingress Controller',    'done',     'high'),
-      ('Set up ACM SSL certificate',          'progress', 'high'),
-      ('Integrate RDS with backend',          'progress', 'medium'),
-      ('Add HPA for backend pods',            'todo',     'medium'),
-      ('Write deployment runbook',            'todo',     'low');
-  `);
-  console.log('Seeded initial tasks.');
+   // seed a few starter tasks if table is empty
+    const { rows } = await client.query('SELECT COUNT(*) FROM tasks');
+    if (parseInt(rows[0].count) === 0) {
+      await client.query(`
+        INSERT INTO tasks (title, status, priority) VALUES
+          ('Set up EKS cluster with Terraform',   'done',     'high'),
+          ('Configure ALB Ingress Controller',    'done',     'high'),
+          ('Set up ACM SSL certificate',          'progress', 'high'),
+          ('Integrate RDS with backend',          'progress', 'medium'),
+          ('Add HPA for backend pods',            'todo',     'medium'),
+          ('Write deployment runbook',            'todo',     'low');
+      `);
+      console.log('Seeded initial tasks.');
+    }
+    console.log('Database schema ready.');
+  } finally {
+    client.release();
+  }
 }
 
-console.log('Database schema ready.');
-```
-
-} finally {
-client.release();
-}
-}
 
 // ── Middleware ────────────────────────────────────────────────────
 app.use(helmet());
