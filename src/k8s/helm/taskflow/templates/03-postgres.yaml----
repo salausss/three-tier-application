@@ -8,6 +8,7 @@ metadata:
     app: taskflow
     tier: database
 spec:
+  serviceName: postgres
   replicas: 1          # Postgres with PVC = single replica (use RDS for HA in prod)
   selector:
     matchLabels:
@@ -76,12 +77,19 @@ spec:
                   name: taskflow-db-credentials
                   key: POSTGRES_DB
       volumes:
-        - name: postgres-data
-          persistentVolumeClaim:
-            claimName: postgres-pvc
         - name: db-secrets-vol
           csi:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
               secretProviderClass: taskflow-db-secrets
+
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: gp2    # or gp3 if you've set that as default
+        resources:
+          requests:
+            storage: 5Gi
