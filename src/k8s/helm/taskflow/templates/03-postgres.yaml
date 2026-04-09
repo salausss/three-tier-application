@@ -1,6 +1,6 @@
 # ── PostgreSQL Deployment ─────────────────────────────────────────
 apiVersion: apps/v1
-kind: Deployment
+kind: statefulset
 metadata:
   name: postgres
   namespace: db
