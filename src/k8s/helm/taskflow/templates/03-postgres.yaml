@@ -36,14 +36,14 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: taskflow-db-credentials
-                  key: REPLICATOR_PASSWORD
+                  key: replicator_password
           command:
             - sh
             - -c
             - |
               # Write a SQL file that the main container will pick up
               cat > /docker-entrypoint-initdb.d/init-replication.sql <<EOF
-              CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD '${REPLICATOR_PASSWORD}';
+              CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD '${replicator_password}';
               EOF
           volumeMounts:
             - name: initdb
