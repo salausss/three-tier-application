@@ -22,10 +22,18 @@ spec:
       serviceAccountName: taskflow-db-sa
       terminationGracePeriodSeconds: 30
 
+      securityContext:
+        runAsUser: 999        # postgres user inside the image
+        runAsGroup: 999
+        fsGroup: 999          # ensures PVC is owned by postgres user
+
       # Creates the replication user on first startup
       initContainers:
         - name: init-replication-user
           image: postgres:16-alpine
+          securityContext:
+            runAsUser: 999    # initContainer also must not be root
+            runAsGroup: 999
           env:
             - name: POSTGRES_PASSWORD
               valueFrom:
