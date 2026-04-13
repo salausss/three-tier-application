@@ -1,6 +1,5 @@
-# ── PostgreSQL Deployment ─────────────────────────────────────────
 apiVersion: apps/v1
-kind: statefulset
+kind: StatefulSet
 metadata:
   name: postgres
   namespace: db
@@ -9,13 +8,11 @@ metadata:
     tier: database
 spec:
   serviceName: postgres
-  replicas: 1          # Postgres with PVC = single replica (use RDS for HA in prod)
+  replicas: 1
   selector:
     matchLabels:
       app: taskflow
       tier: database
-  strategy:
-    type: Recreate     # Required when using a ReadWriteOnce PVC
   template:
     metadata:
       labels:
@@ -24,42 +21,40 @@ spec:
     spec:
       serviceAccountName: taskflow-db-sa
       terminationGracePeriodSeconds: 30
+
+      # Creates the replication user on first startup
+      initContainers:
+        - name: init-replication-user
+          image: postgres:16-alpine
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: taskflow-db-credentials
+                  key: POSTGRES_PASSWORD
+            - name: REPLICATOR_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: taskflow-db-credentials
+                  key: REPLICATOR_PASSWORD
+          command:
+            - sh
+            - -c
+            - |
+              # Write a SQL file that the main container will pick up
+              cat > /docker-entrypoint-initdb.d/init-replication.sql <<EOF
+              CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD '${REPLICATOR_PASSWORD}';
+              EOF
+          volumeMounts:
+            - name: initdb
+              mountPath: /docker-entrypoint-initdb.d
+
       containers:
         - name: postgres
           image: postgres:16-alpine
           ports:
             - containerPort: 5432
               name: postgres
-          #envFrom:
-          #  - secretRef:
-          #      name: taskflow-db-secret
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "256Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
-          volumeMounts:
-            - name: postgres-data
-              mountPath: /var/lib/postgresql/data
-              subPath: postgres     # subPath avoids "lost+found" issue
-            - name: db-secrets-vol
-              mountPath: /mnt/secrets
-              readOnly: true
-          livenessProbe:
-            exec:
-              command: ["pg_isready", "-U", "taskflow", "-d", "taskflow"]
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 6
-          readinessProbe:
-            exec:
-              command: ["pg_isready", "-U", "taskflow", "-d", "taskflow"]
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            timeoutSeconds: 3
           env:
             - name: POSTGRES_USER
               valueFrom:
@@ -76,6 +71,50 @@ spec:
                 secretKeyRef:
                   name: taskflow-db-credentials
                   key: POSTGRES_DB
+            - name: PGDATA
+              value: /var/lib/postgresql/data/postgres   # matches subPath
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+              subPath: postgres
+            - name: db-secrets-vol
+              mountPath: /mnt/secrets
+              readOnly: true
+            - name: postgres-config
+              mountPath: /etc/postgresql/postgresql.conf
+              subPath: postgresql.conf
+            - name: postgres-config
+              mountPath: /etc/postgresql/pg_hba.conf
+              subPath: pg_hba.conf
+            - name: initdb
+              mountPath: /docker-entrypoint-initdb.d
+          command:
+            - postgres
+            - -c
+            - config_file=/etc/postgresql/postgresql.conf
+            - -c
+            - hba_file=/etc/postgresql/pg_hba.conf
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "taskflow", "-d", "taskflow"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "taskflow", "-d", "taskflow"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+
       volumes:
         - name: db-secrets-vol
           csi:
@@ -83,13 +122,18 @@ spec:
             readOnly: true
             volumeAttributes:
               secretProviderClass: taskflow-db-secrets
+        - name: postgres-config
+          configMap:
+            name: postgres-config
+        - name: initdb
+          emptyDir: {}
 
   volumeClaimTemplates:
     - metadata:
         name: postgres-data
       spec:
         accessModes: ["ReadWriteOnce"]
-        storageClassName: gp2    # or gp3 if you've set that as default
+        storageClassName: gp2
         resources:
           requests:
             storage: 5Gi
