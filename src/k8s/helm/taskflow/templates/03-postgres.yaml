@@ -22,40 +22,40 @@ spec:
       serviceAccountName: taskflow-db-sa
       terminationGracePeriodSeconds: 30
 
-      securityContext:
-        runAsUser: 999        # postgres user inside the image
-        runAsGroup: 999
-        fsGroup: 999          # ensures PVC is owned by postgres user
+      #securityContext:
+      #  runAsUser: 999        # postgres user inside the image
+      #  runAsGroup: 999
+      #  fsGroup: 999          # ensures PVC is owned by postgres user
 
       # Creates the replication user on first startup
-      initContainers:
-        - name: init-replication-user
-          image: postgres:16-alpine
-          securityContext:
-            runAsUser: 999    # initContainer also must not be root
-            runAsGroup: 999
-          env:
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: taskflow-db-credentials
-                  key: POSTGRES_PASSWORD
-            - name: REPLICATOR_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: taskflow-db-credentials
-                  key: replicator_password
-          command:
-            - sh
-            - -c
-            - |
-              # Write a SQL file that the main container will pick up
-              cat > /docker-entrypoint-initdb.d/init-replication.sql <<EOF
-              CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD '${replicator_password}';
-              EOF
-          volumeMounts:
-            - name: initdb
-              mountPath: /docker-entrypoint-initdb.d
+      #initContainers:
+      #  - name: init-replication-user
+      #    image: postgres:16-alpine
+      #    securityContext:
+      #      runAsUser: 999    # initContainer also must not be root
+      #      runAsGroup: 999
+      #    env:
+      #      - name: POSTGRES_PASSWORD
+      #        valueFrom:
+      #          secretKeyRef:
+      #            name: taskflow-db-credentials
+      #            key: POSTGRES_PASSWORD
+      #      - name: REPLICATOR_PASSWORD
+      #        valueFrom:
+      #          secretKeyRef:
+      #            name: taskflow-db-credentials
+      #            key: replicator_password
+       #   command:
+       #     - sh
+       #     - -c
+       #     - |
+       #       # Write a SQL file that the main container will pick up
+       #       cat > /docker-entrypoint-initdb.d/init-replication.sql <<EOF
+       #       CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD '${replicator_password}';
+       #       EOF
+       #   volumeMounts:
+       #     - name: initdb
+       #       mountPath: /docker-entrypoint-initdb.d
 
       containers:
         - name: postgres
