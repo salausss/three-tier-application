@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backend-efs-pvc
+  namespace: app
+spec:
+  accessModes:
+    - ReadWriteMany       # RWX — both backend replicas share the same EFS mount
+  storageClassName: efs-sc
+  resources:
+    requests:
+      storage: 2Gi
