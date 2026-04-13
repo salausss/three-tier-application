@@ -60,6 +60,10 @@ spec:
       containers:
         - name: postgres
           image: postgres:16-alpine
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999  
           ports:
             - containerPort: 5432
               name: postgres
