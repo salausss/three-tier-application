@@ -1,0 +1,97 @@
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: taskflow-app-secrets
+  namespace: app
+spec:
+  provider: aws
+  parameters:
+    region: ${var.region}
+    objects: |
+      - objectName: "${aws_secretsmanager_secret.taskflow_app.name}"
+        objectType: secretsmanager
+        jmesPath:
+          - path: JWT_SECRET
+            objectAlias: jwt_secret
+          - path: API_KEY
+            objectAlias: api_key
+          - path: COGNITO_SECRET
+            objectAlias: cognito_secret
+          - path: APP_ENCRYPTION_KEY
+            objectAlias: app_encryption_key
+
+      - objectName: "${aws_secretsmanager_secret.taskflow_db.arn}"
+        objectType: secretsmanager
+        jmesPath:
+          - path: password
+            objectAlias: postgres_password
+          - path: username
+            objectAlias: postgres_user
+          - path: dbname
+            objectAlias: postgres_db
+          - path: host
+            objectAlias: postgres_host
+          - path: port
+            objectAlias: postgres_port
+      
+  secretObjects:
+    - secretName: taskflow-app-secrets
+      type: Opaque
+      data:
+        - objectName: jwt_secret
+          key: JWT_SECRET
+        - objectName: api_key
+          key: API_KEY
+        - objectName: cognito_secret
+          key: COGNITO_SECRET
+        - objectName: app_encryption_key
+          key: APP_ENCRYPTION_KEY
+
+    - secretName: taskflow-db-credentials
+      type: Opaque
+      data:
+        - objectName: postgres_password
+          key: POSTGRES_PASSWORD
+        - objectName: postgres_user
+          key: POSTGRES_USER
+        - objectName: postgres_db
+          key: POSTGRES_DB
+        - objectName: postgres_host
+          key: POSTGRES_HOST
+        - objectName: postgres_port
+          key: POSTGRES_PORT
+
+---
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: taskflow-db-secrets
+  namespace: db
+spec:
+  provider: aws
+  parameters:
+    region: ${var.region}
+    objects: |
+      - objectName: "${aws_secretsmanager_secret.taskflow_db.arn}"
+        objectType: secretsmanager
+        jmesPath:
+          - path: password
+            objectAlias: postgres_password
+          - path: username
+            objectAlias: postgres_user
+          - path: dbname
+            objectAlias: postgres_db
+          - path: replicator_password
+            objectAlias: replicator_password
+  secretObjects:
+    - secretName: taskflow-db-credentials
+      type: Opaque
+      data:
+        - objectName: postgres_password
+          key: POSTGRES_PASSWORD
+        - objectName: postgres_user
+          key: POSTGRES_USER
+        - objectName: postgres_db
+          key: POSTGRES_DB
+        - objectName: replicator_password
+          key: replicator_password

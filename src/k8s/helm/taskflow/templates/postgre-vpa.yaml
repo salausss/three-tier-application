@@ -20,4 +20,4 @@ spec:
           memory: 512Mi
         maxAllowed:
           cpu: "1"
-          memory: 1Gi
+          memory: 1GiA
