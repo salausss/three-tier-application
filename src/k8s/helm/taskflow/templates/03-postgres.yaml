@@ -111,7 +111,7 @@ spec:
           #  - postgres
           #args:
           #  - "-c"
-            - "config_file=/etc/postgresql/postgresql.conf"
+          #  - "config_file=/etc/postgresql/postgresql.conf"
           #  - "-c"
           #  - "hba_file=/etc/postgresql/pg_hba.conf"
           livenessProbe:
