@@ -1,0 +1,95 @@
+# ── PostgreSQL Deployment ─────────────────────────────────────────
+apiVersion: apps/v1
+kind: statefulset
+metadata:
+  name: postgres
+  namespace: db
+  labels:
+    app: taskflow
+    tier: database
+spec:
+  serviceName: postgres
+  replicas: 1          # Postgres with PVC = single replica (use RDS for HA in prod)
+  selector:
+    matchLabels:
+      app: taskflow
+      tier: database
+  strategy:
+    type: Recreate     # Required when using a ReadWriteOnce PVC
+  template:
+    metadata:
+      labels:
+        app: taskflow
+        tier: database
+    spec:
+      serviceAccountName: taskflow-db-sa
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          #envFrom:
+          #  - secretRef:
+          #      name: taskflow-db-secret
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+              subPath: postgres     # subPath avoids "lost+found" issue
+            - name: db-secrets-vol
+              mountPath: /mnt/secrets
+              readOnly: true
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "taskflow", "-d", "taskflow"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "taskflow", "-d", "taskflow"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: taskflow-db-credentials
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: taskflow-db-credentials
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: taskflow-db-credentials
+                  key: POSTGRES_DB
+      volumes:
+        - name: db-secrets-vol
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: taskflow-db-secrets
+
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: gp2    # or gp3 if you've set that as default
+        resources:
+          requests:
+            storage: 5Gi
