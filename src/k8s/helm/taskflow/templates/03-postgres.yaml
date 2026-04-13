@@ -107,12 +107,12 @@ spec:
               subPath: pg_hba.conf
             - name: initdb
               mountPath: /docker-entrypoint-initdb.d
-          #command:
-          #  - postgres
-          #  - -c
-          #  - config_file=/etc/postgresql/postgresql.conf
-          #  - -c
-          #  - hba_file=/etc/postgresql/pg_hba.conf
+          command:
+            - postgres
+            - -c
+            - config_file=/etc/postgresql/postgresql.conf
+            - -c
+            - hba_file=/etc/postgresql/pg_hba.conf
           livenessProbe:
             exec:
               command: ["pg_isready", "-U", "taskflow", "-d", "taskflow"]
