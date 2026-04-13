@@ -106,4 +106,4 @@ spec:
               mountPath: /mnt/secrets
               readOnly: true
             - name: app-efs-vol                   
-              mountPath: /app
+              mountPath: /app/uploads
